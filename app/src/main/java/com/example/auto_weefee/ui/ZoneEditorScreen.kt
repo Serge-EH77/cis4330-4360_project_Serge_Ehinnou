@@ -6,9 +6,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -23,26 +26,28 @@ import androidx.compose.runtime.setValue
 
 @Composable
 fun ZoneEditorScreen() {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text("Create Zone", style = MaterialTheme.typography.headlineMedium)
+    var contextType by remember { mutableStateOf("driving") }
+    var volume by remember { mutableStateOf(0f) }
+    var dndEnabled by remember { mutableStateOf(false) }
+    var autoReply by remember { mutableStateOf("") }
 
-        Spacer(Modifier.height(16.dp))
+    Column(modifier = Modifier.padding(16.dp)) {
 
-        var ssid by remember { mutableStateOf("") }
-        TextField(
-            value = ssid,
-            onValueChange = { ssid = it },
-            label = { Text("SSID") },
-            modifier = Modifier.fillMaxWidth()
-        )
+        Text("Context Type", style = MaterialTheme.typography.titleMedium)
 
-        Spacer(Modifier.height(16.dp))
+        Row {
+            listOf("driving", "classroom").forEach { type ->
+                FilterChip(
+                    selected = contextType == type,
+                    onClick = { contextType = type },
+                    label = { Text(type.replaceFirstChar { it.uppercase() }) }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+        }
 
-        var volume by remember { mutableStateOf(0f) }
+        Spacer(modifier = Modifier.height(16.dp))
+
         Text("Volume: ${volume.toInt()}%")
         Slider(
             value = volume,
@@ -50,30 +55,27 @@ fun ZoneEditorScreen() {
             valueRange = 0f..100f
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
-        var dndEnabled by remember { mutableStateOf(false) }
         Row(verticalAlignment = Alignment.CenterVertically) {
             Checkbox(checked = dndEnabled, onCheckedChange = { dndEnabled = it })
             Text("Enable Do Not Disturb")
         }
 
-        Spacer(Modifier.height(16.dp))                   
+        Spacer(modifier = Modifier.height(16.dp))
 
-        var autoReply by remember { mutableStateOf("") }
-        TextField(
+        OutlinedTextField(
             value = autoReply,
             onValueChange = { autoReply = it },
             label = { Text("Auto-reply message") },
             modifier = Modifier.fillMaxWidth()
         )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
-        Button(
-            onClick = { /* save logic */ },
-            modifier = Modifier.fillMaxWidth()
-        ) {
+        Button(onClick = {
+            // TODO: Save to database
+        }) {
             Text("Save Zone")
         }
     }
