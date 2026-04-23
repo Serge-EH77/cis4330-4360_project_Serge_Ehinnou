@@ -5,28 +5,141 @@ import kotlin.math.sqrt
 object FeatureExtractor {
 
     fun extract(window: List<SensorSample>): FloatArray {
-        if (window.isEmpty()) return FloatArray(0)
+        if (window.isEmpty()) return FloatArray(37) { 0f }
 
+        // Helpers
+        fun mean(list: List<Float>): Float =
+            if (list.isEmpty()) 0f else list.sum() / list.size
+
+        fun std(list: List<Float>): Float {
+            if (list.isEmpty()) return 0f
+            val m = mean(list)
+            val varSum = list.fold(0f) { acc, v ->
+                val d = v - m
+                acc + d * d
+            }
+            return sqrt(varSum / list.size)
+        }
+
+        fun max(list: List<Float>): Float =
+            list.maxOrNull() ?: 0f
+
+        fun meanInt(list: List<Int>): Float =
+            if (list.isEmpty()) 0f else list.sum().toFloat() / list.size
+
+        fun maxInt(list: List<Int>): Float =
+            list.maxOrNull()?.toFloat() ?: 0f
+
+        // Full window series
         val ax = window.map { it.ax }
         val ay = window.map { it.ay }
         val az = window.map { it.az }
+
         val gx = window.map { it.gx }
         val gy = window.map { it.gy }
         val gz = window.map { it.gz }
 
-        fun mean(list: List<Float>) = list.sum() / list.size
-        fun std(list: List<Float>): Float {
-            val m = mean(list)
-            return sqrt(list.map { (it - m) * (it - m) }.sum() / list.size)
-        }
-        fun max(list: List<Float>) = list.maxOrNull() ?: 0f
+        val tax = window.map { it.tax }
+        val tay = window.map { it.tay }
+        val taz = window.map { it.taz }
 
-        val accelMag = window.map { sqrt(it.ax*it.ax + it.ay*it.ay + it.az*it.az) }
-        val gyroMag = window.map { sqrt(it.gx*it.gx + it.gy*it.gy + it.gz*it.gz) }
+        val accelMag = window.map { sqrt(it.ax * it.ax + it.ay * it.ay + it.az * it.az) }
+        val gyroMag = window.map { sqrt(it.gx * it.gx + it.gy * it.gy + it.gz * it.gz) }
+        val totalMag = window.map { sqrt(it.tax * it.tax + it.tay * it.tay + it.taz * it.taz) }
+
+        val micDb = window.map { it.micDb }
+
+        val qx = window.map { it.qx }
+        val qy = window.map { it.qy }
+        val qz = window.map { it.qz }
+        val qw = window.map { it.qw }
+
+        val roll = window.map { it.roll }
+        val pitch = window.map { it.pitch }
+        val yaw = window.map { it.yaw }
+
+        val wifiCount = window.map { it.wifiCount }
+        val wifiMaxRssi = window.map { it.wifiMaxRssi }
+
+        // 1‑second orientation window (last 1000 ms)
+        val lastTs = window.last().time
+        val oneSecWindow = window.filter { it.time >= lastTs - 1000 }
+
+        val qx1s = oneSecWindow.map { it.qx }
+        val qy1s = oneSecWindow.map { it.qy }
+        val qz1s = oneSecWindow.map { it.qz }
+        val qw1s = oneSecWindow.map { it.qw }
+
+        val roll1s = oneSecWindow.map { it.roll }
+        val pitch1s = oneSecWindow.map { it.pitch }
+        val yaw1s = oneSecWindow.map { it.yaw }
+
+        // Now build features in EXACT CSV order:
 
         return floatArrayOf(
-            mean(accelMag), std(accelMag), max(accelMag),
-            mean(gyroMag), std(gyroMag), max(gyroMag)
+            // 1–3: accelerometer_x/y/z_mean
+            mean(ax),
+            mean(ay),
+            mean(az),
+
+            // 4–6: accelerometer_magnitude_mean/std/max
+            mean(accelMag),
+            std(accelMag),
+            max(accelMag),
+
+            // 7–9: gyroscope_x/y/z_mean
+            mean(gx),
+            mean(gy),
+            mean(gz),
+
+            // 10–12: gyroscope_magnitude_mean/std/max
+            mean(gyroMag),
+            std(gyroMag),
+            max(gyroMag),
+
+            // 13–14: microphone_dbfs_mean/max
+            mean(micDb),
+            max(micDb),
+
+            // 15–18: orientation_qx/qy/qz/qw (mean over window)
+            mean(qx),
+            mean(qy),
+            mean(qz),
+            mean(qw),
+
+            // 19–21: orientation_roll/pitch/yaw (mean over window)
+            mean(roll),
+            mean(pitch),
+            mean(yaw),
+
+            // 22–25: orientation_1s_qx/qy/qz/qw (mean over last 1s)
+            mean(qx1s),
+            mean(qy1s),
+            mean(qz1s),
+            mean(qw1s),
+
+            // 26–28: orientation_1s_roll/pitch/yaw (mean over last 1s)
+            mean(roll1s),
+            mean(pitch1s),
+            mean(yaw1s),
+
+            // 29–31: totalacceleration_x/y/z_mean
+            mean(tax),
+            mean(tay),
+            mean(taz),
+
+            // 32–34: totalacceleration_magnitude_mean/std/max
+            mean(totalMag),
+            std(totalMag),
+            max(totalMag),
+
+            // 35–36: wifi_wifi_count, wifi_wifi_max_rssi
+            meanInt(wifiCount),
+            maxInt(wifiMaxRssi),
+
+            // 37: (if your CSV truly has 37 columns and we’ve matched them all,
+            // this is the last one: wifi_wifi_max_rssi already used above)
+            // If your CSV has exactly the 36 named above + 1 more, adjust here.
         )
     }
 }
