@@ -9,30 +9,21 @@ FOLDERS = {
 
 OUTPUT_FILE = "merged_dataset.csv"
 
-script_dir = os.path.dirname(os.path.abspath(__file__))
-
 def load_sensor_file(path):
     """Load a 1-second sensor CSV and ensure timestamp is datetime index."""
     df = pd.read_csv(path)
     
-    if df.columns[0].lower() == 'time':
-        # Normal file
-        time_col = 'time'
-    else:
-        # Malformed file with extra headers
-        # Read again skipping the extra rows
-        df_temp = pd.read_csv(path, header=None, skiprows=3)
-        # Get column names from first two rows
-        row1 = pd.read_csv(path, header=None, nrows=1).iloc[0]
-        row2 = pd.read_csv(path, header=None, skiprows=1, nrows=1).iloc[0]
-        columns = ['time']
-        for i in range(1, len(row1)):
-            col_name = str(row1[i]).lower() + '_' + str(row2[i]).lower()
-            columns.append(col_name)
-        df_temp.columns = columns
-        df = df_temp
-        time_col = 'time'
-    
+    # Detect timestamp column
+    time_col = None
+    for col in df.columns:
+        if col.lower() in ["time", "timestamp", "datetime"]:
+            time_col = col
+            break
+
+    if time_col is None:
+        print("❌ No timestamp column in:", path)
+        return None
+
     df[time_col] = pd.to_datetime(df[time_col])
     df = df.set_index(time_col)
     return df
@@ -41,7 +32,6 @@ def load_sensor_file(path):
 all_data = []
 
 for label, folder in FOLDERS.items():
-    folder = os.path.join(script_dir, folder)
     print(f"\nProcessing folder: {folder} ({label})")
 
     # Find all *_1s.csv files
