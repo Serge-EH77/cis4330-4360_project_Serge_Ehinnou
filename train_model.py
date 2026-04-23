@@ -7,6 +7,10 @@ import joblib
 # 1. Load dataset
 df = pd.read_csv("merged_dataset.csv")
 
+# --- FIX: Remove accidental index column(s) ---
+df = df.loc[:, ~df.columns.str.contains("^Unnamed")]
+df = df.drop(columns=["0"], errors="ignore")
+
 # Drop time column (not a feature)
 df = df.drop(columns=["time"], errors="ignore")
 

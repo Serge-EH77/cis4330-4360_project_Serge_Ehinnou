@@ -5,7 +5,7 @@ import kotlin.math.sqrt
 object FeatureExtractor {
 
     fun extract(window: List<SensorSample>): FloatArray {
-        if (window.isEmpty()) return FloatArray(37) { 0f }
+        if (window.isEmpty()) return FloatArray(36)
 
         // Helpers
         fun mean(list: List<Float>): Float =
@@ -61,7 +61,7 @@ object FeatureExtractor {
         val wifiCount = window.map { it.wifiCount }
         val wifiMaxRssi = window.map { it.wifiMaxRssi }
 
-        // 1‑second orientation window (last 1000 ms)
+        // 1‑second orientation window
         val lastTs = window.last().time
         val oneSecWindow = window.filter { it.time >= lastTs - 1000 }
 
@@ -74,72 +74,67 @@ object FeatureExtractor {
         val pitch1s = oneSecWindow.map { it.pitch }
         val yaw1s = oneSecWindow.map { it.yaw }
 
-        // Now build features in EXACT CSV order:
-
+        // Return EXACT 36 features in EXACT CSV order
         return floatArrayOf(
-            // 1–3: accelerometer_x/y/z_mean
+            // 1–3 accelerometer_x/y/z_mean
             mean(ax),
             mean(ay),
             mean(az),
 
-            // 4–6: accelerometer_magnitude_mean/std/max
+            // 4–6 accelerometer magnitude mean/std/max
             mean(accelMag),
             std(accelMag),
             max(accelMag),
 
-            // 7–9: gyroscope_x/y/z_mean
+            // 7–9 gyroscope_x/y/z_mean
             mean(gx),
             mean(gy),
             mean(gz),
 
-            // 10–12: gyroscope_magnitude_mean/std/max
+            // 10–12 gyroscope magnitude mean/std/max
             mean(gyroMag),
             std(gyroMag),
             max(gyroMag),
 
-            // 13–14: microphone_dbfs_mean/max
+            // 13–14 microphone mean/max
             mean(micDb),
             max(micDb),
 
-            // 15–18: orientation_qx/qy/qz/qw (mean over window)
+            // 15–18 orientation quaternion mean
             mean(qx),
             mean(qy),
             mean(qz),
             mean(qw),
 
-            // 19–21: orientation_roll/pitch/yaw (mean over window)
+            // 19–21 orientation roll/pitch/yaw mean
             mean(roll),
             mean(pitch),
             mean(yaw),
 
-            // 22–25: orientation_1s_qx/qy/qz/qw (mean over last 1s)
+            // 22–25 orientation 1s quaternion mean
             mean(qx1s),
             mean(qy1s),
             mean(qz1s),
             mean(qw1s),
 
-            // 26–28: orientation_1s_roll/pitch/yaw (mean over last 1s)
+            // 26–28 orientation 1s roll/pitch/yaw mean
             mean(roll1s),
             mean(pitch1s),
             mean(yaw1s),
 
-            // 29–31: totalacceleration_x/y/z_mean
+            // 29–31 total acceleration x/y/z mean
             mean(tax),
             mean(tay),
             mean(taz),
 
-            // 32–34: totalacceleration_magnitude_mean/std/max
+            // 32–34 total acceleration magnitude mean/std/max
             mean(totalMag),
             std(totalMag),
             max(totalMag),
 
-            // 35–36: wifi_wifi_count, wifi_wifi_max_rssi
+            // 35–36 wifi count + wifi max rssi
             meanInt(wifiCount),
-            maxInt(wifiMaxRssi),
-
-            // 37: (if your CSV truly has 37 columns and we’ve matched them all,
-            // this is the last one: wifi_wifi_max_rssi already used above)
-            // If your CSV has exactly the 36 named above + 1 more, adjust here.
+            maxInt(wifiMaxRssi)
         )
     }
 }

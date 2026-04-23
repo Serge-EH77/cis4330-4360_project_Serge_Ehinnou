@@ -20,6 +20,9 @@ class PredictionViewModel(app: Application) : AndroidViewModel(app) {
     val uiState: StateFlow<PredictionUiState> = _uiState
 
     private val sensorCollector = SensorCollector(app)
+    init {
+        ModelRunner.initialize(app)
+    }
 
     fun startScanning() {
         _uiState.value = PredictionUiState(isScanning = true)
